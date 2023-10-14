@@ -1,4 +1,4 @@
-import { debounceTime, fromEvent, map, pluck } from 'rxjs'
+import { debounceTime, fromEvent, map, mergeAll, pluck } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 
 // Referencias
@@ -14,11 +14,13 @@ const input$ = fromEvent<KeyboardEvent>(textInput, 'keyup')
 input$
   .pipe(
     debounceTime(500),
-    map((event) => {
-      const texto = event.target['value']
-      return ajax.getJSON(`https://api.github.com/users/${texto}`)
-    })
+    pluck('target', 'value'),
+    map((texto) =>
+      ajax.getJSON(`https://api.github.com/search/users?q=${texto}`)
+    ),
+    mergeAll(),
+    pluck('items')
   )
   .subscribe((resp) => {
-    resp.pipe(pluck('url')).subscribe(console.log)
+    console.log(resp)
   })
